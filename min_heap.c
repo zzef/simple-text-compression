@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "min_heap.h"
+#include <string.h>
 
-void heapify(int* data, int i, int len) {
+void heapify(struct node* data[], int i, int len) {
 	
 	if (i>=len) {
 		return;
@@ -11,15 +12,15 @@ void heapify(int* data, int i, int len) {
 	int right = (i*2)+2;
 	int smallest = i;
 
-	if (left<len && data[left]<data[smallest]) {
+	if (left<len && data[left]->count<data[smallest]->count) {
 		smallest = left;
 	}
-	if (right<len && data[right]<data[smallest]) {
+	if (right<len && data[right]->count<data[smallest]->count) {
 		smallest = right;
 	}
 
 	if (smallest!=i) {
-		int temp = data[i];
+		struct node* temp = data[i];
 		data[i]=data[smallest];
 		data[smallest]=temp;
 		heapify(data,smallest,len);
@@ -28,10 +29,10 @@ void heapify(int* data, int i, int len) {
 }
 
 
-void sift_up(int* data, int index) {
+void sift_up(struct node* data[], int index) {
 	int parent = (index-1)/2;
-	while(data[parent]>data[index]) {
-		int temp = data[parent];
+	while(data[parent]->count>data[index]->count) {
+		struct node* temp = data[parent];
 		data[parent]=data[index];
 		data[index]=temp;
 		index = parent;
@@ -39,38 +40,38 @@ void sift_up(int* data, int index) {
 	}	
 }
 
-void insert(int* data, int* size, int value) {
-	data[*size]=value;
+void insert(struct node* data[], int* size, struct node* n) {
+	data[*size]=n;
 	sift_up(data, *size);
 	*size=*size+1;
 }
 
-int find_min(int* data) {
+struct node* find_min(struct node* data[]) {
 	return data[0];
 }
 
-void delete_min(int* data, int* len) {
+void delete_min(struct node* data[], int* len) {
 	data[0]=data[*len-1];
-	heapify(data,0,*len);
+	heapify(data,0,*len-1);
 	*len=*len-1;
 }
 
-int extract_min(int* data, int* len) {
-	int min = find_min(data);
+struct node* extract_min(struct node* data[], int* len) {
+	struct node* min = find_min(data);
 	delete_min(data, len);
 	return min;
 }
 
-void display_heap(int* data, int len) {
+void display_heap(struct node* data[], int len) {
 	
 	for (int i=0; i<len; i++) {
-		printf("%i,",data[i]);
+		printf("%i,",data[i]->count);
 	}
 	printf("\n");
 
 }
 
-void create_heap(int* data, int len) {
+void build_heap(struct node* data[], int len) {
 	
 	int mid = len/2;
 	for (int i = mid; i>=0; i--) {

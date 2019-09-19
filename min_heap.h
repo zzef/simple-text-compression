@@ -1,6 +1,14 @@
 #define MAX_HEAP 1024
-void insert(int* data, int* size, int value);
-void create_heap(int* data, int len);
-void display_heap(int* data, int len);
-int extract_min(int* data, int* len);
-int find_min(int* data);
+
+struct node {
+	char chr;
+	int count;
+	struct node* nodes[2];
+};
+
+
+void insert(struct node* data[], int* size, struct node* n);
+void build_heap(struct node* data[], int len);
+void display_heap(struct node* data[], int len);
+struct node* extract_min(struct node* data[], int* len);
+struct node* find_min(struct node* data[]);
