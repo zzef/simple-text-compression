@@ -5,20 +5,25 @@
 #include <math.h>
 #include <inttypes.h>
 
-int gen_codes(struct node* htree, uint64_t codes[], uint64_t code) {
+#define CHARS 128
 
-	if ((htree->nodes)[0]->chr!=-56) {
-		codes[(htree->nodes)[0]->chr]=(code*10)+1;
+int gen_codes(struct node* htree, char* codes[], char* code, int top) {
+
+	int chr = htree->chr;
+	
+	if (chr!=-56) {
+		printf("reached %c\n",chr);
+		codes[chr]=malloc(sizeof(char)*top);
+		memcpy(codes[chr],code,sizeof(char)*top);
 	}
 	else {
-		gen_codes((htree->nodes)[0],codes,(code*10)+1);
-	}
+		printf("going right\n");
+		code[top]='1';
+		gen_codes((htree->nodes)[1],codes,code,top+1);
+		printf("going left\n");
+		code[top]='0';
+		gen_codes((htree->nodes)[0],codes,code,top+1);
 
-	if ((htree->nodes)[1]->chr!=-56) {
-		codes[(htree->nodes)[1]->chr]=(code*10)+2;
-	}
-	else {
-		gen_codes((htree->nodes)[1],codes,(code*10)+2);
 	}
 }
 
@@ -30,7 +35,7 @@ void count_freqs(FILE* text, int table[]) {
 }
 
 void init_heap(int freq_table[], struct node* nodes[], int* length) {
-	for(int i=0; i<128; i++) {
+	for(int i=0; i<CHARS; i++) {
 		if (freq_table[i]>0) {
 			struct node* n = malloc(sizeof(struct node));
 			n->chr=i;
@@ -58,15 +63,26 @@ struct node* gen_huffman(struct node* nodes[], int* length) {
 	return extract_min(nodes,length);
 }
 
+void print_codes(char* codes[], int length) {
+	for (int i = 0; i<length; i++) {
+		if (codes[i]) {
+			printf("chr: %c -> %s\n",i,codes[i]);
+		}
+	}
+}
+
 int main(int argc, char** argv) {
 
 	FILE *text;
 	int length=0;
-	int freq_table[128];
-	struct node* nodes[128];
-	memset(freq_table,0,128*sizeof(int));
-	uint64_t codes[128];
+	int freq_table[CHARS];
+	struct node* nodes[CHARS];
+	char* codes[CHARS];
 	struct node* tree;
+	char code[CHARS];
+	memset(code,0,CHARS*sizeof(char));
+	memset(freq_table,0,CHARS*sizeof(int));
+	memset(codes,0,CHARS*sizeof(char*));
 
 	if (!(text=fopen(argv[1],"r"))) {
 		printf("Failed to open file");
@@ -83,10 +99,19 @@ int main(int argc, char** argv) {
 		
 	build_heap(nodes,length);
 	tree = gen_huffman(nodes,&length);
+	printf("result: %i\nsize: %i\nchar: %c\n",tree->count, length, tree->chr);	
 
-	memset(codes,0,128*sizeof(uint64_t));
 	printf("generating codes\n");
-	gen_codes(tree,codes,0);
+	gen_codes(tree,codes,code,0);
+	printf("done\n");
+	print_codes(codes,CHARS);
+
+	for (int i = 0;i<CHARS;i++) {
+		free(codes[i]);
+		codes[i]=NULL;
+	}	
+
+
 }
 
 
