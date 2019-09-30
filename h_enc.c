@@ -71,7 +71,73 @@ void print_codes(char* codes[], int length) {
 	}
 }
 
+void set_bit(ssize_t pos, char* buffer, char chr) {
+	printf("%i",chr);
+	if (chr==0) {
+		char b = ~(1 << (7-pos));
+		*buffer = *buffer & b;
+	}
+	if (chr==1) {
+		char b = 1 << (7-pos);
+		*buffer = *buffer | b;
+	}
+}
+
+void write_bit(char compressed[], ssize_t size, char chr, ssize_t* bit_seek) {
+
+	//if gets too big reallocate
+	
+	ssize_t	offset = *bit_seek/8;
+	char buffer;
+
+	if ((*bit_seek%8)==0) {
+		printf("|");
+		buffer = 0;
+		set_bit(0,&buffer,chr);
+	}
+	else {
+		buffer = compressed[offset];
+		set_bit(*bit_seek-(offset*8),&buffer,chr);
+	}
+	compressed[offset]=buffer;
+	*bit_seek=*bit_seek+1;
+}
+
+void write_byte(char compressed[], ssize_t size, char chr, ssize_t* bit_seek) {
+	//printf("|%c",chr);
+	for (int i = 0; i<8; i++) {
+		write_bit(compressed, size, ((1 << 7-i) & chr) != 0, bit_seek);
+	}
+	//printf("|");
+
+}
+
+struct node* build_codebook(struct node* tree, char compressed[], ssize_t size, ssize_t* bit_seek) {
+	
+	char chr = tree->chr;
+
+	if (chr!=-56) {
+		write_bit(compressed,size,1,bit_seek);
+		write_byte(compressed,size,chr,bit_seek);
+	}
+	else {
+		write_bit(compressed,0,size,bit_seek);
+		build_codebook((tree->nodes)[0],compressed,size,bit_seek);
+		build_codebook((tree->nodes)[1],compressed,size,bit_seek);
+	}
+}
+
 int main(int argc, char** argv) {
+
+
+	/*FILE *test;
+
+	test=fopen("tests/test3.txt","w");
+
+	for (int i =0; i<128;i++) {
+		fseek(test,i,SEEK_SET);
+		fputc(i,test);
+	}*/
 
 	FILE *text;
 	int length=0;
@@ -80,6 +146,8 @@ int main(int argc, char** argv) {
 	char* codes[CHARS];
 	struct node* tree;
 	char code[CHARS];
+	char compressed[1024];
+	memset(compressed,0,1024);
 	memset(code,0,CHARS*sizeof(char));
 	memset(freq_table,0,CHARS*sizeof(int));
 	memset(codes,0,CHARS*sizeof(char*));
@@ -106,11 +174,25 @@ int main(int argc, char** argv) {
 	printf("done\n");
 	print_codes(codes,CHARS);
 
+
+	/*if (!(compressed=fopen("compressed.txt","wrb"))) {
+		printf("Failed to create a new file");
+		return 0;
+	}*/
+
+	ssize_t bit_seek = 0;
+	build_codebook(tree,compressed,1024,&bit_seek);
+
+	printf("\ncompressed tree: ");
+	for (int i = 0; i < (bit_seek/8)+1; i++) {
+		printf("%i,",compressed[i]);
+	}
+	printf("\nsize: %i\n",bit_seek);
+
 	for (int i = 0;i<CHARS;i++) {
 		free(codes[i]);
 		codes[i]=NULL;
-	}	
-
+	}
 
 }
 
